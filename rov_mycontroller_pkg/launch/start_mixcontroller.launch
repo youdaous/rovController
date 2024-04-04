@@ -1,0 +1,95 @@
+<launch>
+  <arg name="uuv_name" default="bluerov2"/>
+  <arg name="model_name" default="$(arg uuv_name)"/>
+  <arg name="saturation" default="5000"/>
+
+  <arg name="Kp" default="0.6,0.6"/>
+  <arg name="Kd" default="0.6,0.6"/>
+  <arg name="Ki" default="0.6,0.6"/>
+
+<!-- 'ixx': 0.2*$(arg mass)*$(arg y_size)*$(arg y_size) + 0.2*$(arg mass)*$(arg z_size)*$(arg z_size), 
+                                                                 'iyy': 0.2*$(arg mass)*$(arg x_size)*$(arg x_size) + 0.2*$(arg mass)*$(arg z_size)*$(arg z_size), 
+                                                                 'izz': 0.2*$(arg mass)*$(arg x_size)*$(arg x_size) + 0.2*$(arg mass)*$(arg y_size)*$(arg y_size),  -->
+                                                                 <!-- 'ixx': ${arg 0.2*mass*y_size*y_size + 0.2*mass*z_size*z_size}, 
+                                                                 'iyy': ${arg 0.2*mass*x_size*x_size + 0.2*mass*z_size*z_size}, 
+                                                                 'izz': ${arg 0.2*mass*x_size*x_size + 0.2*mass*y_size*y_size},  -->
+  <arg name="x_size" default="0.448"/>
+  <arg name="y_size" default="0.2384"/>
+  <arg name="z_size" default="0.28066"/>
+  <arg name="mass" default="10"/>
+  <arg name="inertial" default="{'ixx': 0.2712, 
+                                                                 'iyy': 0.5590, 
+                                                                 'izz': 0.5151, 
+                                                                 'ixy': 0.0, 
+                                                                 'ixz': 0.0, 
+                                                                 'iyz': 0.0}"/>
+  <arg name="cog" default="[0.0,0.0,0.0]"/>
+  <arg name="cob" default="[0.0,0.0,0.3]"/>
+  <arg name="volume" default="0.011054"/>
+  <arg name="density" default="1028.0"/>
+  <arg name="height" default="0.254"/>
+  <arg name="length" default="0.457"/>
+  <arg name="width" default="0.338"/>
+  <arg name="Ma" default="[[1.7182,0,0,0,0,0],[0,0,0,0,0,0],[0,0,5.468,0,0,0],[0,0,0,0,0,0],[0,0,0,0,1.2481,0],[0,0,0,0,0,0.4006]]"/>
+  <arg name="linear_damping" default="-11.7391,-20,-31.8678,-25,-44.9085,-5"/>
+
+  <arg name="ref" default="2,0,0"/>
+
+  <!-- <arg name="output_dir" default="$(find uuv_thruster_manager)/config/$(arg model_name)"/>  -->
+  <!-- <arg name="config_file" default="$(find uuv_thruster_manager)/config/$(arg model_name)/thruster_manager.yaml"/> -->
+  <!-- <arg name="tam_file" default="$(find uuv_thruster_manager)/config/$(arg model_name)/TAM.yaml"/> -->
+  
+  <arg name="output_dir" default="$(find bluerov2_control)/config"/>
+  <arg name="config_file" default="$(find bluerov2_control)/config/thruster_manager.yaml"/>
+  <arg name="tam_file" default="$(find bluerov2_control)/config/TAM_ArduSub.yaml"/>
+
+  <include file="$(find uuv_thruster_manager)/launch/thruster_manager.launch">
+      <arg name="uuv_name" value="$(arg uuv_name)"/>
+      <arg name="model_name" value="$(arg model_name)"/>
+      <arg name="output_dir" value="$(arg output_dir)"/>
+      <arg name="config_file" value="$(arg config_file)"/>
+      <arg name="tam_file" value="$(arg tam_file)"/>
+  </include>
+
+  <group ns="$(arg uuv_name)">
+      <node pkg="uuv_control_utils"
+            type="trajectory_marker_publisher.py"
+            name="trajectory_marker_publisher"
+            output="screen">
+          <remap from="trajectory" to="dp_controller/trajectory"/>
+          <remap from="waypoints" to="dp_controller/waypoints"/>
+      </node>
+
+      <node pkg="rov_mycontroller_pkg"
+          type="mixModelController.py"
+          name="modelController_node"
+          output="screen">
+          <remap from="odom" to="pose_gt"/>
+          <remap from="trajectory" to="dp_controller/trajectory"/>
+          <remap from="input_trajectory" to="dp_controller/input_trajectory"/>
+          <remap from="waypoints" to="dp_controller/waypoints"/>
+          <remap from="error" to="dp_controller/error"/>
+          <remap from="reference" to="dp_controller/reference"/>
+          <remap from="thruster_output" to="thruster_manager/input_stamped"/>
+          <rosparam subst_value="true">
+              saturation: $(arg saturation)
+              mass: $(arg mass)
+              inertial: $(arg inertial)
+              cog: $(arg cog)
+              cob: $(arg cob)
+              volume: $(arg volume)
+              density: $(arg density)
+              height: $(arg height)
+              length: $(arg length)
+              width: $(arg width)
+              Ma: $(arg Ma)
+              linear_damping: [$(arg linear_damping)]
+              ref: [$(arg ref)]
+
+              Kp: [$(arg Kp)]
+              Kd: [$(arg Kd)]
+              Ki: [$(arg Ki)]
+          </rosparam>
+      </node>
+  </group>
+</launch>
