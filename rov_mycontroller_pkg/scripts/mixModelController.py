@@ -19,29 +19,30 @@ class MPCcontroller(DPControllerBase):
         self.D = -1 * np.diag(self._vehicle_model._linear_damping[[0, 1, 5], [0, 1, 5]])
         print("Mass:\n{}\nD:\n{}\n".format(self.MassMatric, self.D))
 
-        # 定深PID参数
+        # PID参数
         self._Kp = np.zeros(shape=(2, 2))
         self._Kd = np.zeros(shape=(2, 2))
         self._Ki = np.zeros(shape=(2, 2))
+        self.K = 1000
 
-        self._int = np.zeros(shape=(2,))
-        self._error_pose = np.zeros(shape=(2,))
+        self._int = np.zeros(shape=(2,1))
+        self._error_pose = np.zeros(shape=(2,1))
 
 
-        self.error_pose_last_k = np.zeros(shape=(2,))
-        self.error_vel_last_k =  np.zeros(shape=(2,))
-        self.tau_last_k = np.zeros(shape=(2,))
+        self.error_pose_last_k = np.zeros(shape=(2,1))
+        self.error_vel_last_k =  np.zeros(shape=(2,1))
+        self.tau_last_k = np.zeros(shape=(2,1))
 
-        self.tau = np.zeros(shape=(6,))
+        self.tau = np.zeros(shape=(6,1))
 
         # PID学习参数设置
-        self.learn_rate = np.array([0.4, 0.35, 0.4])
+        self.learn_rate = np.array([[0.2, 0.02], [0.05, 0.05], [0.1, 0.1]])
 
         # Do the same for the other two matrices
         if rospy.get_param('~Kp'):
             diag = rospy.get_param('~Kp')
             if len(diag) == 2:
-                self._Kp = np.diag(diag)
+                self._Kp = np.array(diag).reshape(2,1)
                 print 'Kp=\n', self._Kp
             else:
                 # If the vector provided has the wrong dimension, raise an exception
@@ -50,7 +51,7 @@ class MPCcontroller(DPControllerBase):
         if rospy.get_param('~Kd'):
             diag = rospy.get_param('~Kd')
             if len(diag) == 2:
-                self._Kd = np.diag(diag)
+                self._Kd = np.array(diag).reshape(2,1)
                 print 'Kd=\n', self._Kd
             else:
                 # If the vector provided has the wrong dimension, raise an exception
@@ -59,7 +60,7 @@ class MPCcontroller(DPControllerBase):
         if rospy.get_param('~Ki'):
             diag = rospy.get_param('~Ki')
             if len(diag) == 2:
-                self._Ki = np.diag(diag)
+                self._Ki = np.array(diag).reshape(2,1)
                 print 'Ki=\n', self._Ki
             else:
                 # If the vector provided has the wrong dimension, raise an exception
@@ -142,39 +143,43 @@ class MPCcontroller(DPControllerBase):
         self.tau[5] = outforce[2]
 
         # 定深PID控制器更新
-        # # 增量式PID
-        # error_pose_k = self.error_pose_euler[[2, 3]]
-        # error_vel_k = self._errors['vel'][[2, 3]]
-        # error_ki = 0.5 * ( error_pose_k + self.error_pose_last_k) * self._dt
-        # x_cell_input = np.array([ error_pose_k - self.error_pose_last_k, error_ki, error_vel_k - self.error_vel_last_k])
-        # tau_PID = self.tau_last_k + (np.dot(self.w_k[0], x_cell_input[0]) + np.dot(self.w_k[1], x_cell_input[1]) +  np.dot(self.w_k[2], x_cell_input[2])) * \
-        #     self._control_saturation 
+        # 增量式PID
+        error_pose_k = self.error_pose_euler[[2, 3]].reshape(2,1)
+        error_vel_k = self._errors['vel'][[2, 3]].reshape(2,1)
+        error_ki = 0.5 * ( error_pose_k + self.error_pose_last_k) * self._dt
+        x_cell_input = np.array([ error_pose_k - self.error_pose_last_k, error_ki, error_vel_k - self.error_vel_last_k])
+        delta_tau = ((self.w_k[0] * x_cell_input[0]) + (self.w_k[1] * x_cell_input[1]) +  (self.w_k[2] * x_cell_input[2])) * \
+            self.K 
+        tau_PID = self.tau_last_k + delta_tau
 
-        #   位置式PID
-        error_pose_k = self.error_pose_euler[[2, 3]]
-        error_vel_k = self._errors['vel'][[2, 3]]
-        self._int = self._int +  0.5 * ( error_pose_k + self.error_pose_last_k) * self._dt
-        x_cell_input = np.array([error_pose_k, self._int, error_vel_k])
-        tau_PID = (np.dot(self.w_k[0], x_cell_input[0]) + np.dot(self.w_k[1], x_cell_input[1]) +  np.dot(self.w_k[2], x_cell_input[2])) * self._control_saturation
+        # #   位置式PID
+        # error_pose_k = self.error_pose_euler[[2, 3]].reshape(2,1)
+        # error_vel_k = self._errors['vel'][[2, 3]].reshape(2,1)
+        # self._int = self._int +  0.5 * ( error_pose_k + self.error_pose_last_k) * self._dt
+        # x_cell_input = np.array([error_pose_k, self._int, error_vel_k])
+        # tau_PID = (np.dot(self.w_k[0], x_cell_input[0]) + np.dot(self.w_k[1], x_cell_input[1]) +  np.dot(self.w_k[2], x_cell_input[2])) * self._control_saturation
 
         self.error_pose_last_k = error_pose_k
         self.error_vel_last_k = error_vel_k
-        # self.tau_last_k = tau_k
+        self.tau_last_k = tau_PID
       
-        if  (x_cell_input[0] > 0.001).any():
-            self.w_k = self.learn_rule(self.w_k, x_cell_input[0], x_cell_input, tau_PID)
-        #  print('w_k:{}'.format(self.w_k))
-        #   print(tau_k.shape)
-        #   print(tau_k)
+        if  np.any(np.abs(error_pose_k) > 0.001):
+            self.w_k = self.learn_rule(self.w_k, -error_pose_k, x_cell_input, delta_tau)
          
         # print(self.reference_pose_inEuler())
         self.tau[2] = tau_PID[0]
         self.tau[3] = tau_PID[1]
-        # print(self.tau)
+        # print(tau_PID)
         self.publish_control_wrench(self.tau)
 
     def reference_pose_inEuler(self):
         roll, pitch, yaw = euler_from_quaternion(self._reference['rot'])
+        roll_vehicle, pitch_vehicle, yaw_vehicle = euler_from_quaternion(self._vehicle_model.quat)
+        if abs(yaw - yaw_vehicle) > np.pi:
+            if yaw > 0:
+                yaw = yaw - 2* np.pi
+            else:
+                yaw = 2 * np.pi - yaw
         return np.array([self._reference['pos'][0], self._reference['pos'][1], yaw]).reshape(3, 1)
     
     def vehicle_pose_inEuler(self):
@@ -194,15 +199,15 @@ class MPCcontroller(DPControllerBase):
         """
         # if error < 0.05:
         #     return w_k
-        w_k_0 = np.diagonal(w_k[0]) + self.learn_rate[0] * error * y * x[0]
-        w_k_1 = np.diagonal(w_k[1]) + self.learn_rate[1] * error * y * x[1]
-        w_k_2 = np.diagonal(w_k[2]) + self.learn_rate[2] * error * y * x[2]
-        w_k[0] = np.diag(2 / (1 + np.exp(-np.square(w_k_0))) - 1)
-        w_k[0] = np.diag(2 / (1 + np.exp(-np.square(w_k_1))) - 1)
-        w_k[0] = np.diag(2 / (1 + np.exp(-np.square(w_k_2))) - 1)
-        # w_k = 1 / (1 + np.exp(-np.square(w_k))) 
-        # w_k = w_k / sum(abs(w_k))
-        # print(error)
+        w_k_0 = w_k[0] + self.learn_rate[0].reshape(2, 1) * error * y * x[0]
+        w_k_1 = w_k[0] + self.learn_rate[0].reshape(2, 1) * error * y * x[0]
+        w_k_2 = w_k[0] + self.learn_rate[0].reshape(2, 1) * error * y * x[0]
+        # print(w_k_1)
+        sum = np.abs(w_k_0) + np.abs(w_k_1) + np.abs(w_k_2)
+        w_k[0] = w_k_0 / sum
+        w_k[1] = w_k_1 / sum
+        w_k[2] = w_k_2 / sum
+        print(w_k[0])
         return w_k
     
     
