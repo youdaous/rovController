@@ -175,11 +175,17 @@ class MPCcontroller(DPControllerBase):
     def reference_pose_inEuler(self):
         roll, pitch, yaw = euler_from_quaternion(self._reference['rot'])
         roll_vehicle, pitch_vehicle, yaw_vehicle = euler_from_quaternion(self._vehicle_model.quat)
+        # if yaw < 0 and yaw_vehicle > 0:
+        #     yaw = 2 * np.pi + yaw
+            
+        # if yaw > 0 and yaw_vehicle < 0:
+        #     yaw = -np.pi - yaw
+
         if abs(yaw - yaw_vehicle) > np.pi:
             if yaw > 0:
-                yaw = yaw - 2* np.pi
+                yaw = -np.pi - yaw
             else:
-                yaw = 2 * np.pi - yaw
+                yaw = 2 * np.pi + yaw
         return np.array([self._reference['pos'][0], self._reference['pos'][1], yaw]).reshape(3, 1)
     
     def vehicle_pose_inEuler(self):
@@ -207,7 +213,7 @@ class MPCcontroller(DPControllerBase):
         w_k[0] = w_k_0 / sum
         w_k[1] = w_k_1 / sum
         w_k[2] = w_k_2 / sum
-        print(w_k[0])
+        # print(w_k[0])
         return w_k
     
     
