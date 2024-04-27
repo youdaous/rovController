@@ -4,10 +4,10 @@
   <arg name="radius" default="3"/>
   <arg name="center_x" default="0"/>
   <arg name="center_y" default="0"/>
-  <arg name="center_z" default="-4"/>
+  <arg name="center_z" default="-5"/>
   <arg name="n_points" default="50"/>
   <arg name="n_turns" default="1"/>
-  <arg name="delta_z" default="2.0"/>
+  <arg name="delta_z" default="3.0"/>
   <!-- Heading offset given in degrees -->
   <arg name="heading_offset" default="0"/>
   <arg name="duration" default="150"/>

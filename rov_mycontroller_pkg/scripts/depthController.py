@@ -112,9 +112,9 @@ class TutorialDPController(DPControllerBase):
         """
         # if error < 0.05:
         #     return w_k
-        w_k_0 = np.diagonal(w_k[0]) + self.learn_rate[0] * error * y * x[0]
-        w_k_1 = np.diagonal(w_k[1]) + self.learn_rate[1] * error * y * x[1]
-        w_k_2 = np.diagonal(w_k[2]) + self.learn_rate[2] * error * y * x[2]
+        w_k_0 = np.diagonal(w_k[0]) + self.learn_rate[0] * error * y * x[0] * self._control_saturation
+        w_k_1 = np.diagonal(w_k[1]) + self.learn_rate[1] * error * y * x[1] * self._control_saturation
+        w_k_2 = np.diagonal(w_k[2]) + self.learn_rate[2] * error * y * x[2] * self._control_saturation
         w_k[0] = np.diag(2 / (1 + np.exp(-np.square(w_k_0))) - 1)
         w_k[0] = np.diag(2 / (1 + np.exp(-np.square(w_k_1))) - 1)
         w_k[0] = np.diag(2 / (1 + np.exp(-np.square(w_k_2))) - 1)

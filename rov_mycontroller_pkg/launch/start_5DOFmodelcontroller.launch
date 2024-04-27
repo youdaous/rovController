@@ -1,15 +1,7 @@
 <launch>
   <arg name="uuv_name" default="bluerov2"/>
   <arg name="model_name" default="$(arg uuv_name)"/>
-  <arg name="saturation" default="2000"/>
-
-  <arg name="Kp" default="0.3,0.1"/>
-  <arg name="Kd" default="0.3,0.1"/>
-  <arg name="Ki" default="0.5,0.3"/>
-
-  <!-- symbolicregression parameter -->
-  <arg name="srMass_inv" default="0.0033182667,0.003238171464483,0.00766664"/>
-  <arg name="srDamping" default="-1,-1.6946775,-1"/>
+  <arg name="saturation" default="5000"/>
 
 <!-- 'ixx': 0.2*$(arg mass)*$(arg y_size)*$(arg y_size) + 0.2*$(arg mass)*$(arg z_size)*$(arg z_size), 
                                                                  'iyy': 0.2*$(arg mass)*$(arg x_size)*$(arg x_size) + 0.2*$(arg mass)*$(arg z_size)*$(arg z_size), 
@@ -37,7 +29,7 @@
   <arg name="Ma" default="[[1.7182,0,0,0,0,0],[0,0,0,0,0,0],[0,0,5.468,0,0,0],[0,0,0,0,0,0],[0,0,0,0,1.2481,0],[0,0,0,0,0,0.4006]]"/>
   <arg name="linear_damping" default="-11.7391,-20,-31.8678,-25,-44.9085,-5"/>
 
-  <arg name="ref" default="2,0,0"/>
+  <arg name="ref" default="2,0,0,0,0,0"/>
 
   <!-- <arg name="output_dir" default="$(find uuv_thruster_manager)/config/$(arg model_name)"/>  -->
   <!-- <arg name="config_file" default="$(find uuv_thruster_manager)/config/$(arg model_name)/thruster_manager.yaml"/> -->
@@ -65,7 +57,7 @@
       </node>
 
       <node pkg="rov_mycontroller_pkg"
-          type="mixModelController.py"
+          type="fiveDOFmodelcontroller.py"
           name="modelController_node"
           output="screen">
           <remap from="odom" to="pose_gt"/>
@@ -89,13 +81,6 @@
               Ma: $(arg Ma)
               linear_damping: [$(arg linear_damping)]
               ref: [$(arg ref)]
-
-              Kp: [$(arg Kp)]
-              Kd: [$(arg Kd)]
-              Ki: [$(arg Ki)]
-
-              srMass_inv: [$(arg srMass_inv)]
-              srDamping: [$(arg srDamping)]
           </rosparam>
       </node>
   </group>

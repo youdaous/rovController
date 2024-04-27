@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(rov_mycontroller_pkg)
+project(customer_msgs)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -8,12 +8,13 @@ project(rov_mycontroller_pkg)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  geometry_msgs
+  message_generation
+  message_runtime
   roscpp
   rospy
+  std_msgs
 )
-
-set(casadi_DIR "/home/youda/casadi-linux-py27-fadc864/casadi/cmake")
-find_package(casadi REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -51,8 +52,7 @@ find_package(casadi REQUIRED)
 ## Generate messages in the 'msg' folder
 # add_message_files(
 #   FILES
-#   Message1.msg
-#   Message2.msg
+#   Srout.msg
 # )
 
 ## Generate services in the 'srv' folder
@@ -72,7 +72,8 @@ find_package(casadi REQUIRED)
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
+#   geometry_msgs
+#   std_msgs
 # )
 
 ################################################
@@ -106,8 +107,8 @@ find_package(casadi REQUIRED)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES rov_mycontroller_pkg
-#  CATKIN_DEPENDS roscpp rospy
+#  LIBRARIES customer_msgs
+ CATKIN_DEPENDS geometry_msgs message_generation message_runtime roscpp rospy std_msgs
 #  DEPENDS system_lib
 )
 
@@ -120,12 +121,11 @@ catkin_package(
 include_directories(
 # include
   ${catkin_INCLUDE_DIRS}
-  /home/youda/casadi-linux-py27-fadc864/casadi/include
 )
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/rov_mycontroller_pkg.cpp
+#   src/${PROJECT_NAME}/customer_msgs.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -136,7 +136,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/rov_mycontroller_pkg_node.cpp)
+# add_executable(${PROJECT_NAME}_node src/customer_msgs_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -200,19 +200,10 @@ include_directories(
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_rov_mycontroller_pkg.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_customer_msgs.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
-# link_directories(/home/youda/casadi-linux-py27-fadc864/casadi)
-
-# add_executable(mpccontrol_node src/mpccontrol.cpp)
-
-# target_link_libraries(mpccontrol_node
-#   ${catkin_LIBRARIES}
-#  casadi
-# )
-

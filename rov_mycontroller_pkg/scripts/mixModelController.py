@@ -19,6 +19,22 @@ class MPCcontroller(DPControllerBase):
         self.D = -1 * np.diag(self._vehicle_model._linear_damping[[0, 1, 5], [0, 1, 5]])
         print("Mass:\n{}\nD:\n{}\n".format(self.MassMatric, self.D))
 
+        if rospy.get_param('~srMass_inv'):
+            diag = rospy.get_param('~srMass_inv')
+            if len(diag) == 3:
+                self.MassMatric_inv = np.diag(diag)
+                print 'Setting SymbolicRegression MassMatric!\n'
+            else:
+                raise rospy.ROSException('For the Mass diagonal matrix, 3 coefficients are needed')
+            
+        if rospy.get_param('~srDamping'):
+            diag = rospy.get_param('~~srDamping')
+            if len(diag) == 3:
+                self.D = -1 * np.diag(diag)
+                print 'Setting SymbolicRegression Dumping\n'
+            else:
+                raise rospy.ROSException('For the Damping diagonal matrix, 3 coefficients are needed')
+
         # PID参数
         self._Kp = np.zeros(shape=(2, 2))
         self._Kd = np.zeros(shape=(2, 2))
@@ -183,7 +199,7 @@ class MPCcontroller(DPControllerBase):
 
         if abs(yaw - yaw_vehicle) > np.pi:
             if yaw > 0:
-                yaw = -np.pi - yaw
+                yaw = -2 * np.pi - yaw
             else:
                 yaw = 2 * np.pi + yaw
         return np.array([self._reference['pos'][0], self._reference['pos'][1], yaw]).reshape(3, 1)

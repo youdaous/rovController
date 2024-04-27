@@ -60,9 +60,10 @@ class TutorialDPController(DPControllerBase):
       self._error_pose = self.error_pose_euler
       tau = np.dot(self._Kp, self.error_pose_euler) + np.dot(self._Kd, self._errors['vel']) + np.dot(self._Ki, self._int)
       self.publish_control_wrench(tau)
-      print 'pos:\n', np.array([self._vehicle_model.pos[0], self._vehicle_model.pos[1]]).reshape(2, 1)
+    #   print 'pos:\n', np.array([self._vehicle_model.pos[0], self._vehicle_model.pos[1]]).reshape(2, 1)
       roll, pitch, yaw = euler_from_quaternion(self._vehicle_model.quat)
       print 'euler:\n', np.array([roll, pitch, yaw])
+      print 'error in euler:\n', self.error_pose_euler
 
 if __name__ == '__main__':
   print('myROVcontroller')
